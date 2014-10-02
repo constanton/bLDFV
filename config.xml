@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<!-- Choose what you want the program to do (values:0-2) -->
+<Training-DBdescriptors-ReId>2</Training-DBdescriptors-ReId>
+<!-- bLDFV divides the image in 3x4 blocks -->
+<NUMOFBLOCKSX>3</NUMOFBLOCKSX>
+<NUMOFBLOCKSY>4</NUMOFBLOCKSY>
+<!-- The number of gaussian components of the GMM -->
+<NumOfClusters>16</NumOfClusters>
+<!-- The dimention of the feature vector -->
+<dimensions>7</dimensions>
+<!-- !!!You need to create a folder for the training images!!!-->
+<pathToTrainImages>./training_images/</pathToTrainImages>
+<!-- ...and set max number of images in the folder (it starts from zero)-->
+<!-- 190 is an example-->
+<NumOfTrainingImages>190</NumOfTrainingImages>
+<!-- !!!You also need to create a folder for the test images!!!-->
+<pathToTestImages>./test_images/</pathToTestImages>
+<!-- ...and set max number of images in the folder (it starts from zero)-->
+<!-- 24 is an example-->
+<NumOfTestImages>24</NumOfTestImages>
+<!-- the location and filename of the query image-->
+<QueryImage>test.bmp</QueryImage>
+<!-- Configurations for the GMM (used by VLFeat)-->
+<maxIterations> 100 </maxIterations>
+<maxRepetitions> 1 </maxRepetitions>
+<sigmaLowerBound> 0.000001 </sigmaLowerBound>
+</opencv_storage>
