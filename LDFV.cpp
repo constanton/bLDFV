@@ -147,7 +147,7 @@ LDFV::LDFV(string config)
 		//Export the final image descriptor as fisher-999.xml
 		exportDescriptor(opts.pathToTestImages,fisherVects[0], -1 );
 		//import Fisher Vectors of all test images in separate Mat arrays
-		importFisherVectors(testDescriptors);
+		importFisherVectors(testDescriptors,0);
 
 		int x = findMinDistancePic(testDescriptors);
 		cout << "Matching picture is: " << endl;
@@ -158,6 +158,18 @@ LDFV::LDFV(string config)
 				delete [] fisherVects[0][p];
 			delete [] fisherVects[0];
 		delete [] fisherVects;
+
+	}else if(opts.LDFVfunction == 3){
+
+		Mat testDescriptors[opts.numoftestimgs+1];
+		Mat queryDescriptors[opts.numofqueryimgs+1];
+
+		//import Fisher Vectors of all test images in separate Mat arrays
+		importFisherVectors(testDescriptors,0);
+		//import Fisher Vectors of all Query images in separate Mat arrays
+		importFisherVectors(queryDescriptors,1);
+
+		exportDistancesCSV(testDescriptors,queryDescriptors);
 
 	}else{
 		//xml configuration is wrong
@@ -357,13 +369,15 @@ void LDFV::loadconfigxml(string configfile)
 	fs.open(configfile, FileStorage::READ);
 	opts.numofblocksX = (int) fs["NUMOFBLOCKSX"];
 	opts.numofblocksY = (int) fs["NUMOFBLOCKSY"];
-	opts.LDFVfunction = (int) fs["Training-DBdescriptors-ReId"];
+	opts.LDFVfunction = (int) fs["Training-DBdescriptors-ReId-Folders"];
 	opts.numoftrainimgs = (int) fs["NumOfTrainingImages"];
 	opts.numoftestimgs = (int) fs["NumOfTestImages"];
+	opts.numofqueryimgs = (int) fs["NumOfQueryImages"];
 	opts.numofclusters = (int) fs["NumOfClusters"];
 	opts.dimensions = (int) fs["dimensions"];
 	opts.pathToTrainImages = (string) fs["pathToTrainImages"];
 	opts.pathToTestImages = (string) fs["pathToTestImages"];
+	opts.pathToQueryImages = (string) fs["pathToQueryImages"];
 	opts.queryImg = (string) fs["QueryImage"];
 	opts.maxiter = (int) fs["maxIterations"];
 	opts.maxrep = (int) fs["maxRepetitions"];
@@ -436,19 +450,26 @@ void LDFV::importGMMparams(Mat* Sigmas,Mat* Means,Mat* Weights)
 	}
 }
 
-void LDFV::importFisherVectors(Mat* FVs)
+void LDFV::importFisherVectors(Mat* FVs, bool testORquery)
 {
 	char filename[15];
+	string pathToImages;
 	string fullpath;
+	int numofimgs;
 
-	for(int im=0; im<opts.numoftestimgs+1; im++)
+	if(testORquery){
+		numofimgs = opts.numofqueryimgs;
+		pathToImages = opts.pathToQueryImages;
+	}else{
+		numofimgs = opts.numoftestimgs;
+		pathToImages = opts.pathToTestImages;
+	}
+
+	for(int im=0; im<numofimgs+1; im++)
 	{
-		//if(im < opts.numoftestimgs){
-			sprintf(filename,"%03d",im);
-			fullpath = opts.pathToTestImages + "fisher-" + filename + ".xml";
-//		}else {
-//			fullpath = opts.pathToTestImages + "fisher.xml";
-//		}
+		sprintf(filename,"%03d",im);
+		fullpath = pathToImages + "fisher-" + filename + ".xml";
+
 		FileStorage fs(fullpath, FileStorage::READ);
 		fs["final_descriptor"] >> FVs[im];
 		fs.release();
@@ -461,11 +482,40 @@ int LDFV::findMinDistancePic(Mat* FVs)
 	Point p;
 	Mat distances(1,opts.numoftestimgs,DataType<double>::type);
 
-	for(int im=0; im<opts.numoftestimgs; im++){
-		distances.at<double>(0,im) = norm(FVs[im],FVs[opts.numoftestimgs],NORM_L2);
-	}
+		for(int im=0; im<opts.numoftestimgs; im++){
+			distances.at<double>(0,im) = norm(FVs[im],FVs[opts.numoftestimgs],NORM_L2);
+		}
+
 	cout << distances << endl;
+    FILE *ofp = fopen("test.csv","w+");
+
+    for(int i = 0 ; i < distances.cols;i++)
+        {
+          fprintf(ofp,"%F\t     %d\n",distances.at<double>(0,i),i);
+        }
+        fclose(ofp);
 	minMaxLoc(distances, 0, 0, &p);
 
 	return p.x;
+}
+
+void LDFV::exportDistancesCSV(Mat* FVs, Mat* QFVs){
+	char buf[0x100];
+
+	Mat distances(1,opts.numoftestimgs,DataType<double>::type);
+
+	for (int qim=0; qim<opts.numofqueryimgs; qim++){
+		for(int im=0; im<opts.numoftestimgs; im++){
+			distances.at<double>(0,im) = norm(FVs[im],QFVs[qim],NORM_L2);
+		}
+		snprintf(buf, sizeof(buf), "%03d.csv", qim);
+		FILE *ofp = fopen(buf,"w+");
+
+		for(int i = 0 ; i < distances.cols;i++)
+		{
+			fprintf(ofp,"%F\t     %d\n",distances.at<double>(0,i),i);
+
+		}
+		fclose(ofp);
+	}
 }

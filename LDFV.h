@@ -21,8 +21,10 @@ limitations under the License.
 #include <iostream>
 #include <string>
 
+
 using namespace cv;
 using namespace std;
+
 
 struct options
 {
@@ -31,15 +33,20 @@ struct options
 	 vl_size maxiter;
 	 vl_size maxrep;
 	 double sigmaLowerBound;
-	 /* LDFVfunction is either 0,1,2 for:
-	  * Find database descriptors, Training to find GMM or Image Re-id */
+	 /* LDFVfunction is either 0,1,2,3 for:
+	  * Find database descriptors, 
+	  * Training to find GMM
+	  * one query image for re-id
+	  * a set of query images for re-id */
 	 int LDFVfunction;
 	 vl_size numofclusters;
 	 int numoftrainimgs;
 	 int numoftestimgs;
+	 int numofqueryimgs;
 	 vl_size dimensions;
 	 string pathToTrainImages;
 	 string pathToTestImages;
+	 string pathToQueryImages;
 	 string queryImg;
 };
 
@@ -58,7 +65,8 @@ private:
 	void exportGMMparams( VlGMM** gmm);
 	void importGMMparams(Mat* Sigmas,Mat* Means,Mat* Weights);
 	int findMinDistancePic(Mat* FVs);
-	void importFisherVectors(Mat* FVs);
+	void importFisherVectors(Mat* FVs, bool testORquery);
+	void exportDistancesCSV(Mat* FVs, Mat* QFVs);
 public:
 	LDFV(string config);
 };
